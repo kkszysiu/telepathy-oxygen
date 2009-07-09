@@ -78,6 +78,12 @@ class ContactList(tp.server.ChannelTypeContactList,
                 raise tp.errors.InvalidHandle('unknown contact handle %d' % \
                                               handle_id)
             contact_name = self.parent_connection.get_handle_obj(handle_type, handle_id).get_name()
+            print contact_name
+            alias = self.parent_connection.get_handle_obj(handle_type, handle_id).get_alias()
+            print alias
+            group = 'Kontakty'
+            print "add contact: name - %s, alias - %s, group - %s" % (contact_name, alias, group)
+            self.parent_connection.factory.sendStanza(self.parent_connection._stanzas['add_contact'] % (contact_name, alias, group))
             self.parent_connection.factory.sendStanza(self.parent_connection._stanzas['subscription_ask'] % contact_name)
             
 
@@ -96,6 +102,7 @@ class ContactList(tp.server.ChannelTypeContactList,
         contacts -- list of contact handles to add
         message -- message to send to server along with request (if supported)
         """
+        print "RemoveMembers: ", str(contacts)
         self.RemoveMembersWithReason(
                                 contacts, message,
                                 tp.constants.CHANNEL_GROUP_CHANGE_REASON_NONE)
@@ -109,6 +116,7 @@ class ContactList(tp.server.ChannelTypeContactList,
         reason -- Channel_Group_Change_Reason as to why the members are being
                   removed
         """
+        print "RemoveMembersWithReason"
         if reason < 0 or reason > tp.constants.LAST_CHANNEL_GROUP_CHANGE_REASON:
             raise tp.errors.InvalidArgument('invalid group change reason')
 
@@ -119,7 +127,8 @@ class ContactList(tp.server.ChannelTypeContactList,
                 raise tp.errors.InvalidHandle('unknown contact handle %d' % \
                                               handle_id)
             contact_name = self.parent_connection.get_handle_obj(handle_type, handle_id).get_name()
-            self.parent_connection.factory.sendStanza(self.parent_connection._stanzas['subscription_remove'] % contact_name)
+            print "remove contact: name - %s" % (contact_name)
+            self.parent_connection.factory.sendStanza(self.parent_connection._stanzas['remove_contact'] % contact_name)
 
         conn_handles = self.parent_connection._handles
         handle_objs = set([conn_handles[tp.constants.HANDLE_TYPE_CONTACT, x]

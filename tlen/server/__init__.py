@@ -64,6 +64,8 @@ class HandleContact(tp.server.Handle):
         self._connection = connection
 
         _extended_attr_defaults = {'alias': u'',
+                                   'group': '',
+                                   'subscription': '',
                                    'avatar_bin': '',
                                    'avatar_mime': '',
                                    'avatar_path': '',
@@ -310,6 +312,12 @@ class StoredList:
             print "contact_xml_to_handle: jid - ", username
         except:
             raise ValueError, 'contact has no username'
+
+        try:
+            group = contact_xml.firstChild.nodeValue
+            print "contact_xml_to_handle: group - ", group
+        except:
+            raise ValueError, 'contact has no group'
 
         CONTACT_HANDLE = tp.constants.HANDLE_TYPE_CONTACT
         id, id_is_new = connection.get_handle_id_idempotent(CONTACT_HANDLE,

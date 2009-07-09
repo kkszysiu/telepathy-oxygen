@@ -171,6 +171,7 @@ class SimplePresence(tp.server.ConnectionInterfaceSimplePresence):
             from_who = xml.attributes["from"].value
         except:
             is_self = True
+            to_who = xml.attributes["from"].value
         try:
             have_status = True
             status = xml.getElementsByTagName('status')[0]
@@ -178,13 +179,20 @@ class SimplePresence(tp.server.ConnectionInterfaceSimplePresence):
         except:
             have_status = False
         #TODO: w presence sa jeszcze dane awatarow ale to zrobie chyba w oddzielnym evencie
-        if is_self == False:
-            #jesli sa to prosby o subskrypcje...
-            if presence == 'subscribe':
-                #no i tu zaczyna sie straszny hack poniewaz jesli dostaniemy prosce o subskrypcje to kliet zawsze ja zaakceptuje i doda nowego uzyszkodnika...
-                to = from_who
-                self.factory.sendStanza(self._stanzas['subscription_allow'] % to)
-            else:
+
+        #jesli sa to prosby o subskrypcje...
+        #is self - jesli status jest moj lub ode mnie - true
+        if presence == 'subscribe' and is_self == False:
+            print 'presence - subscribe from: ', from_who
+            #no i tu zaczyna sie straszny hack poniewaz jesli dostaniemy prosce o subskrypcje to kliet zawsze ja zaakceptuje...
+            #i wysle prosbe o subskrypcje dla siebie
+            self.factory.sendStanza(self._stanzas['subscription_allow'] % from_who)
+#        elif presence == 'subscribed' and is_self == False:
+#            print 'presence - subscribed from: ', from_who
+#            #jesli osoba zasubskrybuje nas to powinnismy i my poprosic ja o jej subskrypcje
+#            self.factory.sendStanza(self._stanzas['subscription_ask'] % to_who)
+        else:
+            if is_self == False:
                 if have_status == False:
                     status = ''
                 print "not my status, its from %s (presence: %s, status: %s)" % (from_who, presence, status)
@@ -196,5 +204,5 @@ class SimplePresence(tp.server.ConnectionInterfaceSimplePresence):
 
                     presence_type = TlenPresenceMapping.to_presence_type[presence]
 
-                    status = self.decodeTlenData(str(status))
-                    self.PresencesChanged({handle: (presence_type, presence, status)})
+                status = self.decodeTlenData(str(status))
+                self.PresencesChanged({handle: (presence_type, presence, status)})

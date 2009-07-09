@@ -36,9 +36,9 @@ from twisted.internet import reactor
 from twisted.python import log
 
 import tlen
-#from aliasing import *
+from aliasing import *
 #from avatars import *
-#from capabilities import *
+from capabilities import *
 #from presence import *
 from simple_presence import *
 from contacts import *
@@ -50,10 +50,16 @@ TLEN_STANZAS = {
     "presence":"<presence><show>%s</show></presence>",
     "presence_with_status":"<presence><show>%s</show><status>%s</status></presence>",
     "get_roster":"<iq type='get' id='GetRoster'><query xmlns='jabber:iq:roster'></query></iq>",
+    #subskrypcje
     "subscription_ask":"<presence to='%s' type='subscribe'/>",
     "subscription_allow":"<presence to='%s' type='subscribed'/>",
     "subscription_deny":"<presence to='%s' type='unsubscribed'/>",
     "subscription_remove":"<presence to='%s' type='unsubscribed'/>",
+    #dodawanie, aktualizacja, usuwanie kontaktow na serwerze
+    #"add_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' name='%s'><group>%s</group></item></query></iq>",
+    "add_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' subscription='' ask='' name='%s'><group>%s</group></item></query></iq>",
+    "update_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' name='%s' subscription='to'><group>Kontakty</group></item></query></iq>",
+    "remove_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='tlentestacc@tlen.pl' subscription='remove' /></query></iq>",
     "end_session":"</s>"
                 }
 
@@ -194,9 +200,9 @@ class TlenStreamFactory(xmlstream.XmlStreamFactory):
 
 
 class Connection(tp.server.Connection,
-#                 aliasing.Aliasing,
+                 aliasing.Aliasing,
 #                 avatars.Avatars,
-#                 capabilities.Capabilities,
+                 capabilities.Capabilities,
 #                 presence.Presence,
                  simple_presence.SimplePresence,
                  contacts.Contacts
@@ -216,9 +222,9 @@ class Connection(tp.server.Connection,
         tp.server.Connection.__init__(self, tlen.common.PROTO_DEFAULT,
                                       unicode(parameters['account']),
                                       'oxygen')
-#        aliasing.Aliasing.__init__(self)
+        aliasing.Aliasing.__init__(self)
 #        avatars.Avatars.__init__(self)
-#        capabilities.Capabilities.__init__(self)
+        capabilities.Capabilities.__init__(self)
 #        presence.Presence.__init__(self)
         contacts.Contacts.__init__(self)
         simple_presence.SimplePresence.__init__(self)
@@ -251,7 +257,7 @@ class Connection(tp.server.Connection,
                         tp.CONNECTION_STATUS_REASON_REQUESTED)
         self._manager.connection_connect(self)
 
-        #self.factory.addBootstrap('/*', self.lg)
+        self.factory.addBootstrap('/*', self.lg)
         self.factory.addBootstrap('/presence', self._on_presence_changed)
         self.factory.addBootstrap('/iq[@type="result" and @id="GetRoster"]/*', self._on_roster_received)
         self.factory.addBootstrap(xmlstream.INIT_FAILED_EVENT, self.err)

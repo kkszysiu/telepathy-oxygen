@@ -32,7 +32,7 @@ class Contacts(tp.server.ConnectionInterfaceContacts):
 
         def get_interfaces():
             return [tp.CONN_INTERFACE,
-                    #tp.CONNECTION_INTERFACE_ALIASING,
+                    tp.CONNECTION_INTERFACE_ALIASING,
                     #tp.CONNECTION_INTERFACE_AVATARS,
                     tp.CONNECTION_INTERFACE_SIMPLE_PRESENCE]
 
@@ -53,9 +53,9 @@ class Contacts(tp.server.ConnectionInterfaceContacts):
 
             attrs = {}
             attrs[tp.CONN_INTERFACE + '/contact-id'] = handle_obj.get_name()
-#            if tp.CONNECTION_INTERFACE_ALIASING in interfaces:
-#                attrs[tp.CONNECTION_INTERFACE_ALIASING + '/alias'] = \
-#                    handle_obj.get_alias()
+            if tp.CONNECTION_INTERFACE_ALIASING in interfaces:
+                attrs[tp.CONNECTION_INTERFACE_ALIASING + '/alias'] = \
+                    handle_obj.get_alias()
 #            if tp.CONNECTION_INTERFACE_AVATARS in interfaces:
 #                attrs[tp.CONNECTION_INTERFACE_AVATARS + '/token'] = \
 #                    handle_obj.get_avatar_token()
