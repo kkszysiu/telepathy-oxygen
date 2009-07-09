@@ -99,6 +99,12 @@ class HandleContact(tp.server.Handle):
     def get_alias(self):
         return self._extended_attrs['alias']
 
+    def get_group(self):
+        return self._extended_attrs['group']
+
+    def get_subscription(self):
+        return self._extended_attrs['subscription']
+
     def get_avatar_bin(self):
         """Returns the raw image binary of the contact's avatar."""
 
@@ -147,6 +153,12 @@ class HandleContact(tp.server.Handle):
 
     def set_alias(self, alias):
         self._extended_attrs['alias'] = alias
+
+    def set_group(self, group):
+        self._extended_attrs['group'] = group
+
+    def set_subscription(self, subscription):
+        self._extended_attrs['subscription'] = subscription
 
     def set_avatar(self, avatar_path, publish=True):
         """Set the contact's avatar image path and generate derived
@@ -271,7 +283,6 @@ class StoredList:
 #                    </item>
 #                </query>
 #            </iq>
-
             print "contact: ", contact.toxml()
             subscription = contact.attributes["subscription"].value
             if subscription == 'both':
@@ -307,6 +318,8 @@ class StoredList:
         handle_contact = None
         extended_attrs = {}
 
+        subscription = contact_xml.attributes["subscription"].value
+
         try:
             username = contact_xml.attributes["jid"].value
             print "contact_xml_to_handle: jid - ", username
@@ -314,10 +327,10 @@ class StoredList:
             raise ValueError, 'contact has no username'
 
         try:
-            group = contact_xml.firstChild.nodeValue
+            group = contact_xml.getElementsByTagName('group')[0].firstChild.nodeValue
             print "contact_xml_to_handle: group - ", group
         except:
-            raise ValueError, 'contact has no group'
+            group = ''
 
         CONTACT_HANDLE = tp.constants.HANDLE_TYPE_CONTACT
         id, id_is_new = connection.get_handle_id_idempotent(CONTACT_HANDLE,
@@ -326,10 +339,14 @@ class StoredList:
         # side-effects in the form of duplicate signals)
         if id_is_new:
             extended_attrs = {}
-            for attr in ('alias', 'avatar_path', 'status', 'status_message'):
+            for attr in ('alias', 'group', 'subscription'):
                 try:
                     if attr == 'alias':
-                        extended_attrs[attr] = contact_xml.attributes["name"].value
+                        extended_attrs[attr] = connection.decodeTlenData(contact_xml.attributes["name"].value)
+                    if attr == 'group':
+                        extended_attrs[attr] = connection.decodeTlenData(group)
+                    if attr == 'subscription':
+                        extended_attrs[attr] = subscription
                 except:
                     pass
             

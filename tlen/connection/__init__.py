@@ -220,7 +220,7 @@ class Connection(tp.server.Connection,
         self.check_parameters(parameters)
 
         tp.server.Connection.__init__(self, tlen.common.PROTO_DEFAULT,
-                                      unicode(parameters['account']),
+                                      unicode(self.unTID(parameters['account'])),
                                       'oxygen')
         aliasing.Aliasing.__init__(self)
 #        avatars.Avatars.__init__(self)
@@ -228,8 +228,8 @@ class Connection(tp.server.Connection,
 #        presence.Presence.__init__(self)
         contacts.Contacts.__init__(self)
         simple_presence.SimplePresence.__init__(self)
-
-        self.factory = TlenStreamFactory(TlenAuthenticator('tlentestacc', 'xxxxxx', 's1.tlen.pl'))
+        print self.unTID(parameters['account']), parameters['password']
+        self.factory = TlenStreamFactory(TlenAuthenticator(self.unTID(parameters['account']), parameters['password'], 's1.tlen.pl'))
 
         #litle hack
         self._stanzas = TLEN_STANZAS
@@ -553,6 +553,12 @@ class Connection(tp.server.Connection,
     def checkTID(self, tid):
         if tid[-8:] != '@tlen.pl':
             tid = tid+'@tlen.pl'
+        print 'tid: '+tid
+        return tid
+
+    def unTID(self, tid):
+        if tid[-8:] == '@tlen.pl':
+            tid = tid[:-8]
         print 'tid: '+tid
         return tid
 
