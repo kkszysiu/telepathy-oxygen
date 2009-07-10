@@ -143,6 +143,10 @@ class ConnectionManager(tp.server.ConnectionManager):
             channel_result = self._channel_new_contact_list(connection,
                                                             handle_type, handle,
                                                             suppress_handler)
+        elif channel_type == tp.interfaces.CHANNEL_TYPE_TEXT:
+            channel_result = self._channel_new_text(connection,
+                                                            handle_type, handle,
+                                                            suppress_handler)
         else:
             # TODO: should be, but is not yet, implemented
             # tp.interfaces.CHANNEL_TYPE_STREAMED_MEDIA:
@@ -216,6 +220,38 @@ class ConnectionManager(tp.server.ConnectionManager):
             raise tp.errors.InvalidArgument()
 
         return channel_result
+
+    def _channel_new_text(self, connection, handle_type, handle,
+                                  suppress_handler):
+	print "ConnectionManager - _channel_new_text"
+
+        handle_obj = connection.get_handle_obj(handle_type, handle)
+
+        if handle_type == tp.constants.HANDLE_TYPE_CONTACT:
+            account_id = connection.get_account_id()
+            channel_result = None
+            for channel in connection._channels:
+                if channel._type == tp.interfaces.CHANNEL_TYPE_TEXT:
+                    try:
+                        if channel.account_id == account_id:
+                            if channel._handle.get_id() == handle:
+                                # channel already exists; return it to caller
+                                channel_result = channel
+                                break
+                    except AttributeError:
+                        pass
+
+            if not channel_result:
+                channel_result = tlen.channel.text.TextChannel(connection,
+                                                                handle_obj,
+                                                                account_id)
+                connection.add_channel(channel_result, handle_obj,
+                                       suppress_handler)
+        else:
+            raise tp.errors.InvalidArgument()
+
+        return channel_result
+
 
     def connections_teardown(self):
         """Tear down all managed connections."""

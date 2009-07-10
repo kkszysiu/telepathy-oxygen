@@ -59,7 +59,7 @@ TLEN_STANZAS = {
     #"add_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' name='%s'><group>%s</group></item></query></iq>",
     "add_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' subscription='' ask='' name='%s'><group>%s</group></item></query></iq>",
     "update_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' name='%s' subscription='to'><group>Kontakty</group></item></query></iq>",
-    "remove_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='tlentestacc@tlen.pl' subscription='remove' /></query></iq>",
+    "remove_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' subscription='remove' /></query></iq>",
     "end_session":"</s>"
                 }
 
@@ -297,7 +297,7 @@ class Connection(tp.server.Connection,
         telepathy.errors.Disconnected
         """
 
-	print "Connection - RequestChannel"
+	print "Connection - RequestChannel IN channel_type - %s, handle_type - %s" % (channel_type, handle_type)
 
         self.check_connected()
 
@@ -440,9 +440,9 @@ class Connection(tp.server.Connection,
         id -- the integer handle value
         """
 
-	print "Connection - get_handle_obj"
-
         self.check_handle(type, id)
+
+	print "Connection - get_handle_obj IN type - %s id - %s" % (type, id)
 
         return self._handles[type, id]
 
@@ -591,6 +591,7 @@ class Connection(tp.server.Connection,
         for list_name in self._CONTACT_LIST_NAMES:
             handle = tp.server.Handle(self.get_handle_id(),
                                       tp.constants.HANDLE_TYPE_LIST, list_name)
+            print 'list type: ', handle.get_name()
             self._handles[handle.get_type(), handle.get_id()] = handle
 
             self._channel_get_or_create(tp.interfaces.CHANNEL_TYPE_CONTACT_LIST,

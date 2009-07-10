@@ -18,3 +18,4 @@
 # 02110-1301 USA
 
 from contact_list import *
+from text import *

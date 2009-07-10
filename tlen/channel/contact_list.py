@@ -61,7 +61,8 @@ class ContactList(tp.server.ChannelTypeContactList,
 
         # declare our group capabilities
         self.GroupFlagsChanged(tp.constants.CHANNEL_GROUP_FLAG_CAN_ADD |
-                               tp.constants.CHANNEL_GROUP_FLAG_CAN_REMOVE, 0)
+                               tp.constants.CHANNEL_GROUP_FLAG_CAN_REMOVE |
+                               tp.constants.CHANNEL_GROUP_FLAG_CAN_RESCIND, 0)
 
     def AddMembers(self, contacts, message):
         """Add list of contacts to this group.
@@ -130,12 +131,15 @@ class ContactList(tp.server.ChannelTypeContactList,
             print "remove contact: name - %s" % (contact_name)
             self.parent_connection.factory.sendStanza(self.parent_connection._stanzas['remove_contact'] % contact_name)
 
-        conn_handles = self.parent_connection._handles
+#        conn_handles = self.parent_connection._handles
+#        handle_objs = set([conn_handles[tp.constants.HANDLE_TYPE_CONTACT, x]
+#                           for x in contacts])
         handle_objs = set([conn_handles[tp.constants.HANDLE_TYPE_CONTACT, x]
                            for x in contacts])
 
         self.MembersChanged(message, (), handle_objs, (), (),
                             self.parent_connection._self_handle, reason)
+        print "contact removed"
 
 class Group(tp.server.ChannelTypeContactList, tp.server.ChannelInterfaceGroup):
     """
@@ -229,12 +233,17 @@ class Group(tp.server.ChannelTypeContactList, tp.server.ChannelInterfaceGroup):
             if (handle_type, handle_id) not in self.parent_connection._handles:
                 raise tp.errors.InvalidHandle('unknown contact handle %d' % \
                                               handle_id)
+                print handle_id
 
         conn_handles = self.parent_connection._handles
         handle_objs = set([conn_handles[tp.constants.HANDLE_TYPE_CONTACT, x]
                            for x in contacts])
+        print str(handle_objs)
 
+#       MembersChanged	(s: Message, au: Added, au: Removed, au: Local_Pending, au: Remote_Pending, u: Actor, u: Reason)
         self.MembersChanged(message, (), handle_objs, (), (),
                             self.parent_connection._self_handle, reason)
+#        self.MembersChanged('', [handle], (), (), (), 0,
+#                telepathy.CHANNEL_GROUP_CHANGE_REASON_INVITED)
 
-        self.parent_connection.save()
+#        self.parent_connection.save()
