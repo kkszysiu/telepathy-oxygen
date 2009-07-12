@@ -26,6 +26,7 @@ import tlen
 
 class Contacts(tp.server.ConnectionInterfaceContacts):
     """Contacts interface for a Telepathy Connection."""
+    print 'Contacts'
 
     def __init__(self):
         tp.server.ConnectionInterfaceContacts.__init__(self)
@@ -40,12 +41,16 @@ class Contacts(tp.server.ConnectionInterfaceContacts):
         self._implement_property_get(tp.CONNECTION_INTERFACE_CONTACTS,
             {'ContactAttributeInterfaces': get_interfaces})
 
+#    @dbus.service.method(tp.CONNECTION_INTERFACE_CONTACTS, in_signature='auasb',
+#                            out_signature='a{ua{sv}}', sender_keyword='sender')
     def GetContactAttributes(self, handles, interfaces, hold):
         interfaces = list(interfaces)
+        print 'GetContactAttributes'
 
         all_attrs = {}
 
         for handle_id in handles:
+            print handle_id
             self.check_handle (tp.constants.HANDLE_TYPE_CONTACT, handle_id)
 
             handle_obj = self._handles[tp.constants.HANDLE_TYPE_CONTACT,

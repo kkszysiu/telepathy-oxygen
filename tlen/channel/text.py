@@ -17,9 +17,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import logging
-import weakref
 import time
+from xml.dom import minidom
 
 import telepathy as tp
 
@@ -27,19 +26,20 @@ import tlen
 
 class TextChannel(
         tp.server.ChannelTypeText,
-        tp.server.ChannelInterfaceGroup,
+#        tp.server.ChannelInterfaceGroup,
+#        tp.server.ChannelTypeText,
         tp.server.ChannelInterfaceChatState):
 
     def __init__(self, connection, channel_handle_obj, account_id):
-        self._recv_id = 0
-
+        self.parent_connection = connection
+        self.contact_handle = channel_handle_obj
         print 'TextChannel - init'
 
-        tp.server.ChannelTypeText.__init__(self, connection, None)
-        tp.server.ChannelInterfaceGroup.__init__(self)
+        tp.server.ChannelTypeText.__init__(self, connection, channel_handle_obj)
+#        tp.server.ChannelInterfaceGroup.__init__(self)
         tp.server.ChannelInterfaceChatState.__init__(self)
 
-        self.GroupFlagsChanged(tp.CHANNEL_GROUP_FLAG_CAN_ADD, 0)
+#        self.GroupFlagsChanged(tp.CHANNEL_GROUP_FLAG_CAN_ADD, 0)
 #        self.__add_initial_participants()
 
 #    def SetChatState(self, state):
@@ -50,7 +50,9 @@ class TextChannel(
 
     def Send(self, message_type, text):
         if message_type == tp.CHANNEL_TEXT_MESSAGE_TYPE_NORMAL:
-            print 'text to send: ', text
+            #print 'text to send: ', text
+            to = self.contact_handle.get_name()
+            self.parent_connection.factory.sendStanza(self.parent_connection._stanzas['message_send'] % (to, self.parent_connection.encodeTlenData(text)))
 #            self._conversation.send_text_message(papyon.ConversationMessage(text))
 #        elif message_type == tp.CHANNEL_TEXT_MESSAGE_TYPE_ACTION and \
 #                text == u"nudge":
@@ -59,16 +61,16 @@ class TextChannel(
             raise tp.NotImplemented("Unhandled message type")
         self.Sent(int(time.time()), message_type, text)
 
-#    def Close(self):
+    def Close(self):
 #        self._conversation.leave()
 #        self._chan_manager_ref().remove_text_channel(self)
-#        tp.server.ChannelTypeText.Close(self)
-#        self.remove_from_connection()
+        tp.server.ChannelTypeText.Close(self)
+        self.remove_from_connection()
 
     # Redefine GetSelfHandle since we use our own handle
     #  as Butterfly doesn't have channel specific handles
 #    def GetSelfHandle(self):
-#        return self._conn.GetSelfHandle()
+#        return self.connection.self_handle
 
     # papyon.event.ConversationEventInterface
 #    def on_conversation_user_joined(self, contact):
@@ -123,10 +125,20 @@ class TextChannel(
 #    @async
 #    def __add_initial_participants(self):
 #        handles = []
-#        handles.append(self._conn.GetSelfHandle())
+#        handles.append(self.connection.self_handle)
 #        for participant in self._conversation.participants:
 #            handle = ButterflyHandleFactory(self._conn_ref(), 'contact',
 #                    participant.account, participant.network_id)
 #            handles.append(handle)
 #        self.MembersChanged('', handles, [], [], [],
 #                0, tp.CHANNEL_GROUP_CHANGE_REASON_NONE)
+
+        #        id = self._recv_id
+#        timestamp = int(time.time())
+#        handle = ButterflyHandleFactory(self._conn_ref(), 'contact',
+#                sender.account, sender.network_id)
+#        type = tp.CHANNEL_TEXT_MESSAGE_TYPE_NORMAL
+#        message = message.content
+#        logger.info("User %r sent a message" % handle)
+#        self.Received(id, timestamp, handle, type, 0, message)
+#        self._recv_id += 1

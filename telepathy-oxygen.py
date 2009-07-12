@@ -54,7 +54,7 @@ if __name__ == '__main__':
     try:
         manager = tlen.ConnectionManager()
     except dbus.NameExistsException:
-        print >> sys.stderr,'telepathy-tlen is already running; exiting...'
+        print >> sys.stderr,'telepathy-oxygen is already running; exiting...'
         sys.exit(0)
 
     try:

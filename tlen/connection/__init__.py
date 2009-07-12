@@ -19,7 +19,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 
-import os.path
+import time
 from xml.dom import minidom
 import sys
 import hashlib
@@ -60,6 +60,8 @@ TLEN_STANZAS = {
     "add_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' subscription='' ask='' name='%s'><group>%s</group></item></query></iq>",
     "update_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' name='%s' subscription='to'><group>Kontakty</group></item></query></iq>",
     "remove_contact":"<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' subscription='remove' /></query></iq>",
+    #messages
+    "message_send":"<message to='%s' type='chat'><body>%s</body></message>",
     "end_session":"</s>"
                 }
 
@@ -244,6 +246,7 @@ class Connection(tp.server.Connection,
         self.set_self_handle(self_handle)
 
         self._manager = manager
+        self._recv_id = 0
 #        self._contacts_file = tlen.common.get_contacts_file(
 #                                            account_id,
 #                                            pin.common.PREFIX_SAVED_PREFERRED)
@@ -260,6 +263,7 @@ class Connection(tp.server.Connection,
         self.factory.addBootstrap('/*', self.lg)
         self.factory.addBootstrap('/presence', self._on_presence_changed)
         self.factory.addBootstrap('/iq[@type="result" and @id="GetRoster"]/*', self._on_roster_received)
+        self.factory.addBootstrap('/message/*', self._on_msg_received)
         self.factory.addBootstrap(xmlstream.INIT_FAILED_EVENT, self.err)
         #drobny hack. Ustawia tatus na niewidoczny
         self.factory.sendStanza(self._stanzas['get_roster'])
@@ -439,7 +443,7 @@ class Connection(tp.server.Connection,
         type -- the Telepathy Handle_Type
         id -- the integer handle value
         """
-
+        print "Connection - get_handle_obj - init"
         self.check_handle(type, id)
 
 	print "Connection - get_handle_obj IN type - %s id - %s" % (type, id)
@@ -563,9 +567,10 @@ class Connection(tp.server.Connection,
         return tid
 
     def encodeTlenData(self, data):
-        tmp = urllib.urlencode({'x':data})
+        tmp = urllib.urlencode({'x':unicode(data).encode('iso-8859-2')})
         encoded = tmp[2:]
-        return encoded.decode('utf8').encode('iso-8859-2')
+        encoded.replace(' ', '+')
+        return encoded
 
     def decodeTlenData(self, data):
         decoded = urllib.unquote(data.replace('+', ' '))
@@ -598,6 +603,9 @@ class Connection(tp.server.Connection,
                                         tp.constants.HANDLE_TYPE_LIST,
                                         handle.get_id(), True)
 
+        #FIXME: hack, hack! Remove it when Empathy will support SimplePresence.
+        self.factory.sendStanza(self._stanzas['presence'] % ('available'))
+
         # XXX: this is kinda hacky, since we have to re-parse the file later
         # create all Groups listed in the contacts file
 #        group_names = tlen.server.contacts_file_get_groups(self)
@@ -610,3 +618,27 @@ class Connection(tp.server.Connection,
 #            self._channel_get_or_create(tp.interfaces.CHANNEL_TYPE_CONTACT_LIST,
 #                                        tp.constants.HANDLE_TYPE_GROUP,
 #                                        handle.get_id(), True)
+
+    def _on_msg_received(self, el):
+        print "_on_msg_received"
+        #<message from="malcom@tlen.pl">
+        #    <body>tresc</body>
+        #</message>
+        xml = minidom.parseString(el.toXml())
+        from_who = xml.getElementsByTagName('message')[0].attributes["from"].value
+        print from_who
+        message = xml.getElementsByTagName('body')[0].firstChild.nodeValue
+        print message
+        handle = self.get_handle_id_idempotent(tp.constants.HANDLE_TYPE_CONTACT,
+                                  from_who)
+
+        text_channel = self._channel_get_or_create(tp.interfaces.CHANNEL_TYPE_TEXT,
+                                    tp.constants.HANDLE_TYPE_CONTACT,
+                                    handle[0], True)
+        id = self._recv_id
+        timestamp = int(time.time())
+        type = tp.CHANNEL_TEXT_MESSAGE_TYPE_NORMAL
+        print "User %s sent a message to you" % from_who
+        print 'handle[0]: ', handle[0]
+        text_channel.Received(id, timestamp, handle[0], type, 0, message)
+        self._recv_id += 1

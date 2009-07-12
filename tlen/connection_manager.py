@@ -28,8 +28,7 @@ import dbus
 import dbus.service
 import telepathy as tp
 
-import tlen.common
-import tlen.connection
+import tlen
 
 class ConnectionManager(tp.server.ConnectionManager):
     """
@@ -153,7 +152,7 @@ class ConnectionManager(tp.server.ConnectionManager):
             # tp.interfaces.CHANNEL_TYPE_ROOM_LIST:
             # tp.interfaces.CHANNEL_TYPE_TEXT:
             # tp.interfaces.CHANNEL_TYPE_TUBES:
-            raise tp.errors.NotImplemented()
+            raise telepathy.NotImplemented("unknown channel type %s" % channel_type)
 
         return channel_result
 
@@ -228,19 +227,21 @@ class ConnectionManager(tp.server.ConnectionManager):
         handle_obj = connection.get_handle_obj(handle_type, handle)
 
         if handle_type == tp.constants.HANDLE_TYPE_CONTACT:
+            print 'Yes.. we have a contact there'
             account_id = connection.get_account_id()
             channel_result = None
             for channel in connection._channels:
                 if channel._type == tp.interfaces.CHANNEL_TYPE_TEXT:
                     try:
+                        print 'Yup... we have channel for text...'
                         if channel.account_id == account_id:
                             if channel._handle.get_id() == handle:
                                 # channel already exists; return it to caller
+                                print 'channel already exists; return it to caller'
                                 channel_result = channel
                                 break
                     except AttributeError:
-                        pass
-
+                        print "AttributeError: somethings wrong in _channel_new_text"
             if not channel_result:
                 channel_result = tlen.channel.text.TextChannel(connection,
                                                                 handle_obj,
